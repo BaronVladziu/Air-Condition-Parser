@@ -1,0 +1,3 @@
+[submodule "submodules/jsonp"]
+	path = submodules/jsonp
+	url = https://github.com/javaee/jsonp.git
