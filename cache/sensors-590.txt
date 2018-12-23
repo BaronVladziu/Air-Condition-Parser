@@ -1,0 +1,1 @@
+[{"id":16149,"stationId":590,"param":{"paramName":"dwutlenek siarki","paramFormula":"SO2","paramCode":"SO2","idParam":1}},{"id":16158,"stationId":590,"param":{"paramName":"ozon","paramFormula":"O3","paramCode":"O3","idParam":5}},{"id":16160,"stationId":590,"param":{"paramName":"dwutlenek azotu","paramFormula":"NO2","paramCode":"NO2","idParam":6}}]

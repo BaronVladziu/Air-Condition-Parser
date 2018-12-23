@@ -1,0 +1,1 @@
+[{"id":15688,"stationId":9593,"param":{"paramName":"dwutlenek azotu","paramFormula":"NO2","paramCode":"NO2","idParam":6}}]
