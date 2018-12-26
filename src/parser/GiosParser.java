@@ -18,6 +18,7 @@ public class GiosParser {
     private final CityFactory cityFactory = new CityFactory();
     private final StationFactory stationFactory = new StationFactory();
     private final SensorFactory sensorFactory = new SensorFactory();
+    private final IndexFactory indexFactory = new IndexFactory();
 
     private Map<Integer, City> cities = new HashMap<>();
     private Map<String, Station> stations = new HashMap<>();
@@ -66,6 +67,7 @@ public class GiosParser {
                             break;
                         case "addressStreet":
                             this.stationFactory.addressStreet = value;
+                            this.stationFactory.index = this.parseIndex(this.stationFactory.id);
                             Station station = this.stationFactory.createInstance();
                             this.stations.put(station.name, station);
                             break;
@@ -163,12 +165,8 @@ public class GiosParser {
                         break;
                     case VALUE_STRING:
                         String temp2 = parser.getString();
-                        String[] temp = temp2.split(" ");
-                        if (temp.length > 1) {
-                            value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)
-                                    .toArray(String[]::new);
-                            date = new Date(Integer.valueOf(value[0]), Integer.valueOf(value[1]), Integer.valueOf(value[2]),
-                                    Integer.valueOf(value[3]), Integer.valueOf(value[4]), Integer.valueOf(value[5]));
+                        if (temp2.split(" ").length > 1) {
+                            date = this.parseDate(temp2);
                         }
                         break;
                     case VALUE_NUMBER:
@@ -183,6 +181,88 @@ public class GiosParser {
         System.out.println("Data: " + counter);
     }
 
+    private Index parseIndex(int stationID) throws IOException {
+        final String result = new String(Files.readAllBytes(Paths.get("cache/index-" + stationID + ".txt")));
+        final JsonParser parser = Json.createParser(new StringReader(result));
+        String key = null;
+        String value = null;
+        Date calcDate = null;
+        String indexLevel = null;
+        while (parser.hasNext()) {
+            final JsonParser.Event event = parser.next();
+            switch (event) {
+                case KEY_NAME:
+                    key = parser.getString();
+                    break;
+                case VALUE_STRING:
+                    value = parser.getString();
+                    if (!value.equals("PYL")) {
+                        switch (key) {
+                            case "stCalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "so2CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "no2CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "coCalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "pm10CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "pm25CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "o3CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+                            case "c6h6CalcDate":
+                                calcDate = this.parseDate(value);
+                                break;
+
+                            case "indexLevelName":
+                                indexLevel = value;
+                                break;
+
+                            case "stSourceDataDate":
+                                this.indexFactory.st = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "so2SourceDataDate":
+                                this.indexFactory.so2 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "no2SourceDataDate":
+                                this.indexFactory.no2 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "coSourceDataDate":
+                                this.indexFactory.co = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "pm10SourceDataDate":
+                                this.indexFactory.pm10 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "pm25SourceDataDate":
+                                this.indexFactory.pm25 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "o3SourceDataDate":
+                                this.indexFactory.o3 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+                            case "c6h6SourceDataDate":
+                                this.indexFactory.c6h6 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                break;
+
+                            default:
+                                throw new RuntimeException("Parsing error: Unknown index key: " + key);
+                        }
+                    }
+                    break;
+            }
+        }
+        parser.close();
+        return this.indexFactory.createInstance();
+    }
+
     public final Map<Integer, City> getCities() {
         return this.cities;
     }
@@ -193,6 +273,14 @@ public class GiosParser {
 
     public final Map<Integer, Sensor> getSensors() {
         return this.sensors;
+    }
+
+    private Date parseDate(String string) {
+        String[] temp = string.split(" ");
+        String[] value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)
+                .toArray(String[]::new);
+        return new Date(Integer.valueOf(value[0]), Integer.valueOf(value[1]), Integer.valueOf(value[2]),
+                Integer.valueOf(value[3]), Integer.valueOf(value[4]), Integer.valueOf(value[5]));
     }
 
 }
