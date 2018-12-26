@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class GiosParser {
 
@@ -146,11 +148,13 @@ public class GiosParser {
 
     public void parseData() throws IOException {
         System.out.println("--- Parsing data ---");
+        Date date = null;
+        long counter = 0;
         for (Sensor sensor : this.sensors.values()) {
             final String result = new String(Files.readAllBytes(Paths.get("cache/data-" + sensor.id + ".txt")));
             final JsonParser parser = Json.createParser(new StringReader(result));
             String key = null;
-            String value = null;
+            String[] value = null;
             while (parser.hasNext()) {
                 final JsonParser.Event event = parser.next();
                 switch (event) {
@@ -158,17 +162,25 @@ public class GiosParser {
                         key = parser.getString();
                         break;
                     case VALUE_STRING:
-                        value = parser.getString();
-                        System.out.println(key + " = " + value);
+                        String temp2 = parser.getString();
+                        String[] temp = temp2.split(" ");
+                        if (temp.length > 1) {
+                            value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)
+                                    .toArray(String[]::new);
+                            date = new Date(Integer.valueOf(value[0]), Integer.valueOf(value[1]), Integer.valueOf(value[2]),
+                                    Integer.valueOf(value[3]), Integer.valueOf(value[4]), Integer.valueOf(value[5]));
+                        }
                         break;
                     case VALUE_NUMBER:
                         int intValue = parser.getInt();
-                        System.out.println(key + " = " + intValue);
+                        this.sensors.get(sensor.id).addData(new Data(date, intValue));
+                        counter++;
                         break;
                 }
             }
             parser.close();
         }
+        System.out.println("Data: " + counter);
     }
 
     public final Map<Integer, City> getCities() {
@@ -182,6 +194,5 @@ public class GiosParser {
     public final Map<Integer, Sensor> getSensors() {
         return this.sensors;
     }
-
 
 }
