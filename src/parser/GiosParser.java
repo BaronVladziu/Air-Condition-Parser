@@ -21,8 +21,9 @@ public class GiosParser {
     private final IndexFactory indexFactory = new IndexFactory();
 
     private Map<Integer, City> cities = new HashMap<>();
-    private Map<String, Station> stations = new HashMap<>();
+    private Map<Integer, Station> stations = new HashMap<>();
     private Map<Integer, Sensor> sensors = new HashMap<>();
+    private Map<String, Integer> stationName2ID = new HashMap<>();
 
 
     public void parseStations() throws IOException {
@@ -40,7 +41,7 @@ public class GiosParser {
                     key = parser.getString();
                     break;
                 case VALUE_STRING:
-                    value = parser.getString();
+                    value = parser.getString().toLowerCase();
                     switch (key) {
                         case "stationName":
                             this.stationFactory.name = value;
@@ -69,7 +70,8 @@ public class GiosParser {
                             this.stationFactory.addressStreet = value;
                             this.stationFactory.index = this.parseIndex(this.stationFactory.id);
                             Station station = this.stationFactory.createInstance();
-                            this.stations.put(station.name, station);
+                            this.stations.put(station.id, station);
+                            this.stationName2ID.put(station.name, station.id);
                             break;
                         default:
                             throw new RuntimeException("Parsing error: Unknown key: " + key);
@@ -109,7 +111,7 @@ public class GiosParser {
                         key = parser.getString();
                         break;
                     case VALUE_STRING:
-                        value = parser.getString();
+                        value = parser.getString().toLowerCase();
                         switch (key) {
                             case "paramName":
                                 this.sensorFactory.paramName = value;
@@ -137,6 +139,7 @@ public class GiosParser {
                                 this.sensorFactory.paramID = intValue;
                                 Sensor sensor = this.sensorFactory.createInstance();
                                 this.sensors.put(sensor.id, sensor);
+                                this.stations.get(sensor.stationID).addSensor(sensor);
                                 break;
                             default:
                                 throw new RuntimeException("Parsing error: Unknown key: " + key);
@@ -164,9 +167,9 @@ public class GiosParser {
                         key = parser.getString();
                         break;
                     case VALUE_STRING:
-                        String temp2 = parser.getString();
+                        String temp2 = parser.getString().toLowerCase();
                         if (temp2.split(" ").length > 1) {
-                            date = this.parseDate(temp2);
+                            date = parseDate(temp2);
                         }
                         break;
                     case VALUE_NUMBER:
@@ -195,32 +198,32 @@ public class GiosParser {
                     key = parser.getString();
                     break;
                 case VALUE_STRING:
-                    value = parser.getString();
-                    if (!value.equals("PYL")) {
+                    value = parser.getString().toLowerCase();
+                    if (!value.equals("pyl")) {
                         switch (key) {
                             case "stCalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "so2CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "no2CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "coCalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "pm10CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "pm25CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "o3CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
                             case "c6h6CalcDate":
-                                calcDate = this.parseDate(value);
+                                calcDate = parseDate(value);
                                 break;
 
                             case "indexLevelName":
@@ -228,28 +231,28 @@ public class GiosParser {
                                 break;
 
                             case "stSourceDataDate":
-                                this.indexFactory.st = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.st = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "so2SourceDataDate":
-                                this.indexFactory.so2 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.so2 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "no2SourceDataDate":
-                                this.indexFactory.no2 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.no2 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "coSourceDataDate":
-                                this.indexFactory.co = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.co = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "pm10SourceDataDate":
-                                this.indexFactory.pm10 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.pm10 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "pm25SourceDataDate":
-                                this.indexFactory.pm25 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.pm25 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "o3SourceDataDate":
-                                this.indexFactory.o3 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.o3 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
                             case "c6h6SourceDataDate":
-                                this.indexFactory.c6h6 = new IndexValue(indexLevel, calcDate, this.parseDate(value));
+                                this.indexFactory.c6h6 = new IndexValue(indexLevel, calcDate, parseDate(value));
                                 break;
 
                             default:
@@ -267,7 +270,7 @@ public class GiosParser {
         return this.cities;
     }
 
-    public final Map<String, Station> getStations() {
+    public final Map<Integer, Station> getStations() {
         return this.stations;
     }
 
@@ -275,7 +278,11 @@ public class GiosParser {
         return this.sensors;
     }
 
-    private Date parseDate(String string) {
+    public final Map<String, Integer> getStationNames2IDs() {
+        return this.stationName2ID;
+    }
+
+    public static Date parseDate(String string) {
         String[] temp = string.split(" ");
         String[] value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)
                 .toArray(String[]::new);

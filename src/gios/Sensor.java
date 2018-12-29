@@ -9,8 +9,9 @@ public class Sensor {
     public final int stationID;
     public final String paramName;
     public final String paramFormula;
-    public final String paramCode;
+    public final Parameter paramCode;
     public final int paramID;
+
     public final List<Data> data = new LinkedList<>();
 
 
@@ -19,7 +20,7 @@ public class Sensor {
         this.stationID = stationID;
         this.paramName = paramName;
         this.paramFormula = paramFormula;
-        this.paramCode = paramCode;
+        this.paramCode = Parameter.valueOf(paramCode.toUpperCase());
         this.paramID = paramID;
     }
 

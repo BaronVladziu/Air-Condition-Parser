@@ -1,5 +1,8 @@
 package gios;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class Station {
 
     public final int id;
@@ -10,6 +13,8 @@ public class Station {
     public final String addressStreet;
     public final Index index;
 
+    public final List<Sensor> sensors = new LinkedList<>();
+
 
     public Station(int id, String name, float gegrLat, float gegrLon, int cityID, String addressStreet, Index index) {
         this.id = id;
@@ -19,6 +24,10 @@ public class Station {
         this.cityID = cityID;
         this.addressStreet = addressStreet;
         this.index = index;
+    }
+
+    public void addSensor(Sensor sensor) {
+        this.sensors.add(sensor);
     }
 
 }
