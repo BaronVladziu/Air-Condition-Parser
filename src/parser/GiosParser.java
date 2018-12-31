@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -120,6 +120,7 @@ public class GiosParser {
                                 this.sensorFactory.paramFormula = value;
                                 break;
                             case "paramCode":
+                                if (value.toUpperCase().equals("PM2.5")) value = "pm25";
                                 this.sensorFactory.paramCode = value;
                                 break;
                             default:
@@ -153,7 +154,7 @@ public class GiosParser {
 
     public void parseData() throws IOException {
         System.out.println("--- Parsing data ---");
-        Date date = null;
+        LocalDateTime date = null;
         long counter = 0;
         for (Sensor sensor : this.sensors.values()) {
             final String result = new String(Files.readAllBytes(Paths.get("cache/data-" + sensor.id + ".txt")));
@@ -182,6 +183,7 @@ public class GiosParser {
             parser.close();
         }
         System.out.println("Data: " + counter);
+        System.out.println("PARSING DONE\n");
     }
 
     private Index parseIndex(int stationID) throws IOException {
@@ -189,7 +191,7 @@ public class GiosParser {
         final JsonParser parser = Json.createParser(new StringReader(result));
         String key = null;
         String value = null;
-        Date calcDate = null;
+        LocalDateTime calcDate = null;
         String indexLevel = null;
         while (parser.hasNext()) {
             final JsonParser.Event event = parser.next();
@@ -282,11 +284,11 @@ public class GiosParser {
         return this.stationName2ID;
     }
 
-    public static Date parseDate(String string) {
+    public static LocalDateTime parseDate(String string) {
         String[] temp = string.split(" ");
         String[] value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)
                 .toArray(String[]::new);
-        return new Date(Integer.valueOf(value[0]), Integer.valueOf(value[1]), Integer.valueOf(value[2]),
+        return LocalDateTime.of(Integer.valueOf(value[0]), Integer.valueOf(value[1]), Integer.valueOf(value[2]),
                 Integer.valueOf(value[3]), Integer.valueOf(value[4]), Integer.valueOf(value[5]));
     }
 

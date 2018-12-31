@@ -1,15 +1,19 @@
 package gios;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class Data {
 
-    public final Date date;
+    public final LocalDateTime date;
     public final float value;
 
-    public Data(Date date, float value) {
+    public Data(LocalDateTime date, float value) {
         this.date = date;
         this.value = value;
+    }
+
+    public String toString() {
+        return value + " (" + date + ")";
     }
 
 }

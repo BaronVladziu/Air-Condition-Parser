@@ -4,6 +4,7 @@ import calculable.*;
 import gios.*;
 import parser.GiosParser;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class StationBase {
@@ -28,6 +29,7 @@ public class StationBase {
             this.cacheUpdater.updateIndexCache(stations.values());
             this.giosParser.parseSensors();
             this.sensors = this.giosParser.getSensors();
+            this.stationName2ID = this.giosParser.getStationNames2IDs();
             System.out.println("Sensors: " + this.sensors.size());
             this.cacheUpdater.updateDataCache(sensors.values());
             this.giosParser.parseData();
@@ -38,34 +40,51 @@ public class StationBase {
     }
 
     public Index getIndex(String stationName) {
-        return this.stations.get(this.stationName2ID.get(stationName)).index;
+        return this.getStation(stationName.toLowerCase()).index;
     }
 
-    public void printIndex(Iterable<String> stationNames) {
-        for (String stationName : stationNames) {
-            System.out.println(this.getIndex(stationName));
+    public void printIndex(Collection<String> stationNames) {
+        if (stationNames.size() == 0) {
+            for (Station station : this.stations.values()) {
+                System.out.println("Index for " + station.name.toUpperCase() + ":");
+                System.out.println(station.index + "\n");
+            }
+        } else {
+            for (String stationName : stationNames) {
+                System.out.println("Index for " + stationName.toUpperCase() + ":");
+                System.out.println(this.getIndex(stationName) + "\n");
+            }
         }
     }
 
-    public List<Data> getValues(Date date, String stationName, Parameter param) {
-        return this.getValues(date, this.stations.get(this.stationName2ID.get(stationName.toLowerCase())), param);
+    public List<Data> getValues(LocalDateTime date, String stationName, Parameter param) {
+        return this.getValues(date, this.getStation(stationName.toLowerCase()), param);
     }
 
-    public List<Data> getValues(Date date, Station station, Parameter param) {
+    public List<Data> getValues(LocalDateTime date, Station station, Parameter param) {
         List<Data> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
-            if (sensor.paramCode == param) {
-                for (Data data : sensor.data) { //data is sorted by date
-                    if (data.date.compareTo(date) < 0) {
-                        values.add(data);
-                    }
-                }
+            try {
+                values.add(this.getValue(date, sensor, param));
+            } catch (ValueNotFoundException ex) {
+                //ignore non-existing values
             }
         }
         return values;
     }
 
-    public List<Data> getValues(Date startDate, Date endDate, Station station, Parameter param) {
+    public Data getValue(LocalDateTime date, Sensor sensor, Parameter param) throws ValueNotFoundException {
+        if (sensor.paramCode == param) {
+            for (Data data : sensor.data) { //data is sorted by date
+                if (data.date.compareTo(date) <= 0) {
+                    return data;
+                }
+            }
+        }
+        throw new ValueNotFoundException("No data found");
+    }
+
+    public List<Data> getValues(LocalDateTime startDate, LocalDateTime endDate, Station station, Parameter param) {
         List<Data> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
             if (sensor.paramCode == param) {
@@ -81,23 +100,34 @@ public class StationBase {
         return values;
     }
 
-    public void printValues(Parameter param, Date date, List<String> stations) {
+    public void printValues(Parameter param, LocalDateTime date, List<String> stations) {
+        System.out.println("--- Values of " + param + " ---");
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
-                for (Data data : this.getValues(date, station, param)) {
-                    System.out.println(data);
+                List<Data> dataList = this.getValues(date, station, param);
+                if (dataList.size() > 0) {
+                    System.out.println(station.name + ":");
+                    for (Data data : dataList) {
+                        System.out.println(data);
+                    }
                 }
             }
         } else {
             for (String stationName : stations) {
-                for (Data data : this.getValues(date, stationName, param)) {
-                    System.out.println(data);
+                Station station = this.getStation(stationName.toLowerCase());
+                List<Data> dataList = this.getValues(date, station, param);
+                if (dataList.size() > 0) {
+                    System.out.println(station.name + ":");
+                    for (Data data : dataList) {
+                        System.out.println(data);
+                    }
                 }
             }
         }
+
     }
 
-    public NamedValue getLowestParam(Date date, Collection<Station> stations) throws ValueNotFoundException {
+    public NamedValue getLowestParam(LocalDateTime date, Collection<Station> stations) throws ValueNotFoundException {
         //Get minimum of every parameter
         float[] values = new float[Parameter.size];
         for (int i = 0; i < Parameter.size; i++) {
@@ -121,14 +151,15 @@ public class StationBase {
         throw new ValueNotFoundException("No data found");
     }
 
-    public void printLowestParam(Date date, List<String> stations) {
+    public void printLowestParam(LocalDateTime date, List<String> stations) {
+        System.out.println("--- Lowest parameter ---");
         try {
             if (stations.size() == 0) {
                 System.out.println(this.getLowestParam(date, this.stations.values()));
             } else {
                 List<Station> stationList = new LinkedList<>();
                 for (String stationName : stations) {
-                    stationList.add(this.stations.get(this.stationName2ID.get(stationName.toLowerCase())));
+                    stationList.add(this.getStation(stationName.toLowerCase()));
                 }
                 System.out.println(this.getLowestParam(date, stationList));
             }
@@ -137,14 +168,14 @@ public class StationBase {
         }
     }
 
-    public NamedValue getHighestParam(Date date, Collection<Station> stations) throws ValueNotFoundException {
+    public NamedValue getHighestParam(LocalDateTime date, Collection<Station> stations) throws ValueNotFoundException {
         //Get minimum of every parameter
         float[] values = new float[Parameter.size];
         for (int i = 0; i < Parameter.size; i++) {
             values[i] = Float.NEGATIVE_INFINITY;
             for (Station station : stations) {
                 for (Data data : this.getValues(date, station.name, Parameter.values()[i])) {
-                    values[i] = Math.min(values[i], data.value);
+                    values[i] = Math.max(values[i], data.value);
                 }
             }
         }
@@ -161,14 +192,15 @@ public class StationBase {
         throw new ValueNotFoundException("No data found");
     }
 
-    public void printHighestParam(Date date, List<String> stations) {
+    public void printHighestParam(LocalDateTime date, List<String> stations) {
+        System.out.println("--- Highest parameter ---");
         try {
             if (stations.size() == 0) {
                 System.out.println(this.getHighestParam(date, this.stations.values()));
             } else {
                 List<Station> stationList = new LinkedList<>();
                 for (String stationName : stations) {
-                    stationList.add(this.stations.get(this.stationName2ID.get(stationName.toLowerCase())));
+                    stationList.add(this.getStation(stationName.toLowerCase()));
                 }
                 System.out.println(this.getHighestParam(date, stationList));
             }
@@ -177,31 +209,30 @@ public class StationBase {
         }
     }
 
-    public List<NamedValue> getNamedValues(Station station, Date date, Parameter param) {
+    public List<NamedValue> getNamedValues(Station station, LocalDateTime date, Parameter param) {
         List<NamedValue> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
-            if (sensor.paramCode == param) {
-                for (Data data : sensor.data) { //data is sorted by date
-                    if (data.date.compareTo(date) < 0) {
-                        values.add(new NamedValue(Integer.toString(sensor.id), data.value));
-                    }
-                }
+            try {
+                values.add(new NamedValue(station.name, this.getValue(date, sensor, param).value));
+            } catch (ValueNotFoundException ex) {
+                //ignore non-existing values
             }
         }
         return values;
     }
 
-    public List<NamedValue> getNamedValues(String stationName, Date date, Parameter param) {
-        return this.getNamedValues(this.stations.get(this.stationName2ID.get(stationName)), date, param);
+    public List<NamedValue> getNamedValues(String stationName, LocalDateTime date, Parameter param) {
+        return this.getNamedValues(this.getStation(stationName.toLowerCase()), date, param);
     }
 
-    public List<NamedValue> getNLowestValues(String stationName, Date date, Parameter param, int N) {
+    public List<NamedValue> getNLowestValues(String stationName, LocalDateTime date, Parameter param, int N) {
         List<NamedValue> values = this.getNamedValues(stationName, date, param);
         Collections.sort(values,Collections.reverseOrder());
-        return values.subList(0, N-1);
+        return values.subList(0, N);
     }
 
-    public void printLowestNValues(Parameter param, Date date, int N, List<String> stations) {
+    public void printLowestNValues(Parameter param, LocalDateTime date, int N, List<String> stations) {
+        System.out.println("--- Lowest " + N + " values of " + param + " ---");
         List<NamedValue> values = new LinkedList<>();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -209,16 +240,16 @@ public class StationBase {
             }
         } else {
             for (String stationName : stations) {
-                values.addAll(this.getNamedValues(this.stations.get(this.stationName2ID.get(stationName)), date, param));
+                values.addAll(this.getNamedValues(this.getStation(stationName.toLowerCase()), date, param));
             }
         }
         Collections.sort(values,Collections.reverseOrder());
-        for (NamedValue value : values.subList(0, N - 1)) {
+        for (NamedValue value : values.subList(0, N)) {
             System.out.println(value);
         }
     }
 
-    public List<NamedValue> getNHighestValues(String stationName, Date date, String param, int N) {
+    public List<NamedValue> getNHighestValues(String stationName, LocalDateTime date, String param, int N) {
         List<NamedValue> values = new LinkedList<>();
         for (Sensor sensor : this.stations.get(this.stationName2ID.get(stationName.toLowerCase())).sensors) {
             if (sensor.paramCode == Parameter.valueOf(param.toUpperCase())) {
@@ -230,10 +261,11 @@ public class StationBase {
             }
         }
         Collections.sort(values);
-        return values.subList(0, N-1);
+        return values.subList(0, N);
     }
 
-    public void printHighestNValues(Parameter param, Date date, int N, List<String> stations) {
+    public void printHighestNValues(Parameter param, LocalDateTime date, int N, List<String> stations) {
+        System.out.println("--- Highest " + N + " values of " + param + " ---");
         List<NamedValue> values = new LinkedList<>();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -241,11 +273,11 @@ public class StationBase {
             }
         } else {
             for (String stationName : stations) {
-                values.addAll(this.getNamedValues(this.stations.get(this.stationName2ID.get(stationName)), date, param));
+                values.addAll(this.getNamedValues(this.getStation(stationName.toLowerCase()), date, param));
             }
         }
         Collections.sort(values);
-        for (NamedValue value : values.subList(0, N - 1)) {
+        for (NamedValue value : values.subList(0, N)) {
             System.out.println(value);
         }
     }
@@ -261,7 +293,7 @@ public class StationBase {
         return addable;
     }
 
-    private Addable<Float> updateFloatAddable(Addable<Float> addable, Station station, Parameter param, Date startDate, Date endDate) throws ValueNotFoundException {
+    private Addable<Float> updateFloatAddable(Addable<Float> addable, Station station, Parameter param, LocalDateTime startDate, LocalDateTime endDate) throws ValueNotFoundException {
         for (Sensor sensor : station.sensors) {
             if (sensor.paramCode == param) {
                 for (Data data : sensor.data) { //data is sorted by date
@@ -288,7 +320,7 @@ public class StationBase {
         return addable;
     }
 
-    private Addable<NamedDatedValue> updateNamedDatedValueAddable(Addable<NamedDatedValue> addable, Station station, Parameter param, Date startDate, Date endDate) throws ValueNotFoundException {
+    private Addable<NamedDatedValue> updateNamedDatedValueAddable(Addable<NamedDatedValue> addable, Station station, Parameter param, LocalDateTime startDate, LocalDateTime endDate) throws ValueNotFoundException {
         for (Sensor sensor : station.sensors) {
             if (sensor.paramCode == param) {
                 for (Data data : sensor.data) { //data is sorted by date
@@ -305,6 +337,7 @@ public class StationBase {
     }
 
     public void printMean(Parameter param, List<String> stations) {
+        System.out.println("--- Mean of " + param + " ---");
         Mean mean = new Mean();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -312,13 +345,14 @@ public class StationBase {
             }
         } else {
             for (String stationName : stations) {
-                this.updateFloatAddable(mean, this.stations.get(this.stationName2ID.get(stationName)), param);
+                this.updateFloatAddable(mean, this.getStation(stationName.toLowerCase()), param);
             }
         }
         System.out.println(mean.calculate());
     }
 
-    public void printMean(Parameter param, Date startDate, Date endDate, List<String> stations) {
+    public void printMean(Parameter param, LocalDateTime startDate, LocalDateTime endDate, List<String> stations) {
+        System.out.println("--- Mean of " + param + " ---");
         Mean mean = new Mean();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -331,7 +365,7 @@ public class StationBase {
         } else {
             for (String stationName : stations) {
                 try {
-                    this.updateFloatAddable(mean, this.stations.get(this.stationName2ID.get(stationName)), param, startDate, endDate);
+                    this.updateFloatAddable(mean, this.getStation(stationName.toLowerCase()), param, startDate, endDate);
                 } catch (ValueNotFoundException ex) {
                     //Ignore missing values
                 }
@@ -341,6 +375,7 @@ public class StationBase {
     }
 
     public void printVariance(Parameter param, List<String> stations) {
+        System.out.println("--- Variance of " + param + " ---");
         Variance variance = new Variance();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -348,13 +383,14 @@ public class StationBase {
             }
         } else {
             for (String stationName : stations) {
-                this.updateFloatAddable(variance, this.stations.get(this.stationName2ID.get(stationName)), param);
+                this.updateFloatAddable(variance, this.getStation(stationName.toLowerCase()), param);
             }
         }
         System.out.println(variance.calculate());
     }
 
-    public void printVariance(Parameter param, Date startDate, Date endDate, List<String> stations) {
+    public void printVariance(Parameter param, LocalDateTime startDate, LocalDateTime endDate, List<String> stations) {
+        System.out.println("--- Variance of " + param + " ---");
         Variance variance = new Variance();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -367,7 +403,7 @@ public class StationBase {
         } else {
             for (String stationName : stations) {
                 try {
-                    this.updateFloatAddable(variance, this.stations.get(this.stationName2ID.get(stationName)), param, startDate, endDate);
+                    this.updateFloatAddable(variance, this.getStation(stationName.toLowerCase()), param, startDate, endDate);
                 } catch (ValueNotFoundException ex) {
                     //Ignore missing values
                 }
@@ -377,6 +413,7 @@ public class StationBase {
     }
 
     public void printRange(Parameter param, List<String> stations) {
+        System.out.println("--- Range of " + param + " ---");
         NamedDatedRange range = new NamedDatedRange();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -384,14 +421,15 @@ public class StationBase {
             }
         } else {
             for (String stationName : stations) {
-                this.updateNamedDatedValueAddable(range, this.stations.get(this.stationName2ID.get(stationName)), param);
+                this.updateNamedDatedValueAddable(range, this.getStation(stationName.toLowerCase()), param);
             }
         }
         System.out.println(range.calculateUp());
         System.out.println(range.calculateDown());
     }
 
-    public void printRange(Parameter param, Date startDate, Date endDate, List<String> stations) {
+    public void printRange(Parameter param, LocalDateTime startDate, LocalDateTime endDate, List<String> stations) {
+        System.out.println("--- Range of " + param + " ---");
         NamedDatedRange range = new NamedDatedRange();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -404,7 +442,7 @@ public class StationBase {
         } else {
             for (String stationName : stations) {
                 try {
-                    this.updateNamedDatedValueAddable(range, this.stations.get(this.stationName2ID.get(stationName)), param, startDate, endDate);
+                    this.updateNamedDatedValueAddable(range, this.getStation(stationName.toLowerCase()), param, startDate, endDate);
                 } catch (ValueNotFoundException ex) {
                     //Ignore missing values
                 }
@@ -415,39 +453,69 @@ public class StationBase {
     }
 
     public void printFigure(Parameter param, List<String> stations) {
+        System.out.println("--- Figure of " + param + " ---");
         NamedDatedRange range = new NamedDatedRange();
         if (stations.size() == 0) {
-            for (Sensor sensor : this.sensors.values()) {
-                for (Data data : sensor.data) {
-                    System.out.println(data);
+            for (Station station : this.stations.values()) {
+                System.out.println(station.name + ":");
+                for (Sensor sensor : station.sensors) {
+                    if (sensor.paramCode == param) {
+                        for (Data data : sensor.data) {
+                            for (int i = 1; i < data.value / 10; i++) {
+                                System.out.print('#');
+                            }
+                            System.out.println(" " + data);
+                        }
+                    }
                 }
             }
         } else {
             for (String stationName : stations) {
-                for (Sensor sensor : this.stations.get(this.stationName2ID.get(stationName)).sensors) {
-                    for (Data data : sensor.data) {
-                        System.out.println(data);
+                System.out.println(stationName + ":");
+                for (Sensor sensor : this.getStation(stationName.toLowerCase()).sensors) {
+                    if (sensor.paramCode == param) {
+                        for (Data data : sensor.data) {
+                            for (int i = 1; i < data.value / 10; i++) {
+                                System.out.print('#');
+                            }
+                            System.out.println(" " + data);
+                        }
                     }
                 }
             }
         }
     }
 
-    public void printFigure(Parameter param, Date startDate, Date endDate, List<String> stations) {
+    public void printFigure(Parameter param, LocalDateTime startDate, LocalDateTime endDate, List<String> stations) {
+        System.out.println("--- Figure of " + param + " ---");
         NamedDatedRange range = new NamedDatedRange();
         if (stations.size() == 0) {
             for (Station station : this.stations.values()) {
+                System.out.println(station.name + ":");
                 for (Data data : this.getValues(startDate, endDate, station, param)) {
-                    System.out.println(data);
+                    for (int i = 1; i < data.value / 10; i++) {
+                        System.out.print('#');
+                    }
+                    System.out.println(" " + data);
                 }
             }
         } else {
             for (String stationName : stations) {
-                for (Data data : this.getValues(startDate, endDate, this.stations.get(this.stationName2ID.get(stationName)), param)) {
-                    System.out.println(data);
+                System.out.println(stationName + ":");
+                for (Data data : this.getValues(startDate, endDate, this.getStation(stationName.toLowerCase()), param)) {
+                    for (int i = 1; i < data.value / 10; i++) {
+                        System.out.print('#');
+                    }
+                    System.out.println(" " + data);
                 }
             }
         }
+    }
+
+    private Station getStation(String stationName) {
+        Station result = this.stations.get(this.stationName2ID.get(stationName));
+        if (result != null) return result;
+        throw new RuntimeException("ERROR: Unknown stationName!");
     }
 
 }

@@ -14,4 +14,9 @@ public class NamedValue implements Comparable<NamedValue> {
     public int compareTo(NamedValue o) {
         return Float.compare(o.value, this.value);
     }
+
+    public String toString() {
+        return name + ": " + value;
+    }
+
 }

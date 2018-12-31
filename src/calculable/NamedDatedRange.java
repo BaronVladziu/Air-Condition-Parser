@@ -2,12 +2,12 @@ package calculable;
 
 import gios.NamedDatedValue;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class NamedDatedRange implements Addable<NamedDatedValue> {
 
-    private NamedDatedValue up = new NamedDatedValue("", new Date(), Float.NEGATIVE_INFINITY);
-    private NamedDatedValue down = new NamedDatedValue("", new Date(), Float.POSITIVE_INFINITY);
+    private NamedDatedValue up = new NamedDatedValue("", LocalDateTime.now(), Float.NEGATIVE_INFINITY);
+    private NamedDatedValue down = new NamedDatedValue("", LocalDateTime.now(), Float.POSITIVE_INFINITY);
 
     public void add(NamedDatedValue value) {
         if (value.value > up.value) {

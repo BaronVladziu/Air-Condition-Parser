@@ -11,14 +11,15 @@ public class App {
             return;
         }
         StationBaseAdapter stationBaseAdapter = new StationBaseAdapter();
-        Class c = stationBaseAdapter.getClass();
-        Class parameter = String[].class;
+        Class<?> c = stationBaseAdapter.getClass();
+        Class<?> parameter = String[].class;
         try {
             Method method = c.getDeclaredMethod(args[0], parameter);
-            method.invoke(stationBaseAdapter, args);
+            method.invoke(stationBaseAdapter, (Object)args);
         } catch (IllegalAccessException | InvocationTargetException ex) {
             ex.printStackTrace();
         } catch (NoSuchMethodException ex) {
+            System.out.println("\nIncorrect usage!\n");
             printHelp();
         }
     }

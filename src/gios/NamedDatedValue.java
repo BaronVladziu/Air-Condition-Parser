@@ -1,17 +1,21 @@
 package gios;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class NamedDatedValue {
 
     public final String name;
-    public final Date date;
+    public final LocalDateTime date;
     public final float value;
 
-    public NamedDatedValue(String name, Date date, float value) {
+    public NamedDatedValue(String name, LocalDateTime date, float value) {
         this.name = name;
         this.date = date;
         this.value = value;
+    }
+
+    public String toString() {
+        return name + ": " + value + " (" + date + ")";
     }
 
 }

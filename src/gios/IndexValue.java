@@ -1,17 +1,21 @@
 package gios;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public class IndexValue {
 
     public final String index;
-    public final Date calcDate;
-    public final Date sourceDataDate;
+    public final LocalDateTime calcDate;
+    public final LocalDateTime sourceDataDate;
 
-    public IndexValue(String index, Date calcDate, Date sourceDataDate) {
+    public IndexValue(String index, LocalDateTime calcDate, LocalDateTime sourceDataDate) {
         this.index = index;
         this.calcDate = calcDate;
         this.sourceDataDate = sourceDataDate;
+    }
+
+    public String toString() {
+        return index + " (" + sourceDataDate + ")";
     }
 
 }
