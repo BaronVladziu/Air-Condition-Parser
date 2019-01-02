@@ -1,21 +1,53 @@
 package app;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonReader;
-import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
+/**
+ * Main class.
+ * @author Bartłomiej Kuśmirek
+ */
 public class App {
 
+    /**
+     * Main method. It passes user request to StationBaseAdapter.
+     * @param args arguments from user console line
+     */
     public static void main(String[] args) {
-        try {
-            StringReader stringReader = new StringReader(HttpGetter.getHTML("http://api.gios.gov.pl/pjp-api/rest/station/findAll"));
-            JsonReader jsonReader = Json.createReader(stringReader);
-            JsonArray json = jsonReader.readArray();
-            System.out.println(json);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        if (args.length == 0) {
+            printHelp();
+            return;
         }
+        StationBaseAdapter stationBaseAdapter = new StationBaseAdapter();
+        Class<?> c = stationBaseAdapter.getClass();
+        Class<?> parameter = String[].class;
+        try {
+            Method method = c.getDeclaredMethod(args[0], parameter);
+            method.invoke(stationBaseAdapter, (Object)args);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            ex.printStackTrace();
+        } catch (NoSuchMethodException ex) {
+            System.out.println("\nIncorrect usage!\n");
+            printHelp();
+        }
+    }
+
+    private static void printHelp() {
+        System.out.println("Usage:\n" +
+                "\n" +
+                "'printIndex [stations]' - prints actual index. You can omit 'stations' to search for every one\n" +
+                "\n" +
+                "'printValues parameter date [stations]' - prints values of given 'parameter'\n" +
+                "'printLowestParameter date [stations]' - prints parameter with lowest value\n" +
+                "'printLowestValue parameter date [stations]' - prints lowest value of given 'parameter'\n" +
+                "'printLowestNValues parameter date n [stations]' - prints 'n' lowest value of given 'parameter'\n" +
+                "You can replace 'Lowest' with 'Highest'. You can also add 'Actual' after 'print' and omit 'date'.\n" +
+                "\n" +
+                "'printRangedMean parameter startDate endDate [stations]' - prints mean value of given 'parameter'\n" +
+                "'printRangedVariance parameter startDate endDate [stations]' - prints variance of given 'parameter'\n" +
+                "'printRangedRange parameter startDate endDate [stations]' - prints range of values of given 'parameter'\n" +
+                "'printRangedFigure parameter startDate endDate [stations]' - prints bar chart of values from '[stations]'\n" +
+                "You can replace 'Ranged' with 'Actual' to set 'endDate' to now. You can also omit 'Ranged' and both dates.\n");
     }
 
 }

@@ -1,0 +1,1 @@
+[{"id":17439,"stationId":10554,"param":{"paramName":"dwutlenek siarki","paramFormula":"SO2","paramCode":"SO2","idParam":1}},{"id":17443,"stationId":10554,"param":{"paramName":"tlenek węgla","paramFormula":"CO","paramCode":"CO","idParam":8}}]

@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Air-Condition-Parser.iml" filepath="$PROJECT_DIR$/.idea/Air-Condition-Parser.iml" />
-      <module fileurl="file://$PROJECT_DIR$/submodules/jsonp/jsonp.iml" filepath="$PROJECT_DIR$/submodules/jsonp/jsonp.iml" />
     </modules>
   </component>
 </project>
