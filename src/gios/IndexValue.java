@@ -18,4 +18,13 @@ public class IndexValue {
         return index + " (" + sourceDataDate + ")";
     }
 
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        IndexValue that = (IndexValue) obj;
+        return (this.index.equals(that.index) &&
+                this.calcDate.equals(that.calcDate) &&
+                this.sourceDataDate.equals(that.sourceDataDate));
+    }
+
 }

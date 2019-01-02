@@ -30,4 +30,25 @@ public class Station {
         this.sensors.add(sensor);
     }
 
+    public boolean equals(Object obj) {
+        Station that = (Station) obj;
+        return (this.id == that.id &&
+                this.name.equals(that.name) &&
+                this.gegrLat == that.gegrLat &&
+                this.gegrLon == that.gegrLon &&
+                this.cityID == that.cityID &&
+                this.addressStreet.equals(that.addressStreet) &&
+                this.index.equals(that.index));
+    }
+
+    public String toString() {
+        return "Station id: " + id + "\n" +
+                "Station name: " + name + "\n" +
+                "gegrLat: " + gegrLat + "\n" +
+                "gegrLon: " + gegrLon + "\n" +
+                "cityID: " + cityID + "\n" +
+                "addressStreet: " + addressStreet + "\n" +
+                "index: " + index;
+    }
+
 }

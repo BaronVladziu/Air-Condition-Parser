@@ -17,4 +17,18 @@ public class City {
         this.provinceName = provinceName;
     }
 
+    public boolean equals(Object obj) {
+        City that = (City) obj;
+        return (this.id == that.id && this.cityName.equals(that.cityName) && this.communeName.equals(that.communeName) &&
+                this.districtName.equals(that.districtName) && this.provinceName.equals(that.provinceName));
+    }
+
+    public String toString() {
+        return "City id: " + id + "\n" +
+                "City name: " + cityName + "\n" +
+                "Commune name: " + communeName + "\n" +
+                "District name: " + districtName + "\n" +
+                "Province name: " + provinceName;
+    }
+
 }

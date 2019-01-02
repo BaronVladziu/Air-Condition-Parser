@@ -11,6 +11,7 @@ public class StationBase {
 
     private final CacheUpdater cacheUpdater = new CacheUpdater();
     private final GiosParser giosParser = new GiosParser();
+    private final String cacheDirName = "cache";
 
     private Map<Integer, Station> stations;
     private Map<Integer, City> cities;
@@ -20,19 +21,19 @@ public class StationBase {
     public StationBase () {
         try {
             this.cacheUpdater.updateStationCache();
-            this.giosParser.parseStations();
+            this.giosParser.parseStations(cacheDirName);
             this.stations = giosParser.getStations();
             this.cities = giosParser.getCities();
             System.out.println("Cities: " + this.cities.size());
             System.out.println("Stations: " + this.stations.size());
             this.cacheUpdater.updateSensorCache(stations.values());
             this.cacheUpdater.updateIndexCache(stations.values());
-            this.giosParser.parseSensors();
+            this.giosParser.parseSensors(cacheDirName);
             this.sensors = this.giosParser.getSensors();
             this.stationName2ID = this.giosParser.getStationNames2IDs();
             System.out.println("Sensors: " + this.sensors.size());
             this.cacheUpdater.updateDataCache(sensors.values());
-            this.giosParser.parseData();
+            this.giosParser.parseData(cacheDirName);
 
         } catch (Exception ex) {
             ex.printStackTrace();

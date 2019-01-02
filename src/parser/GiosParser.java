@@ -26,10 +26,14 @@ public class GiosParser {
     private Map<String, Integer> stationName2ID = new HashMap<>();
 
 
-    public void parseStations() throws IOException {
+    public void parseStations(String dirName) throws IOException {
         System.out.println("--- Parsing stations ---");
-        final String result = new String(Files.readAllBytes(Paths.get("cache/station-findAll.txt")));
-        final JsonParser parser = Json.createParser(new StringReader(result));
+        final String file = new String(Files.readAllBytes(Paths.get(dirName + "/station-findAll.txt")));
+        this.parseStations(file, dirName);
+    }
+
+    private void parseStations(String file, String dirName) throws IOException {
+        final JsonParser parser = Json.createParser(new StringReader(file));
         String prevKey = null;
         String key = null;
         String value = null;
@@ -68,7 +72,7 @@ public class GiosParser {
                             break;
                         case "addressStreet":
                             this.stationFactory.addressStreet = value;
-                            this.stationFactory.index = this.parseIndex(this.stationFactory.id);
+                            this.stationFactory.index = this.parseIndex(dirName, this.stationFactory.id);
                             Station station = this.stationFactory.createInstance();
                             this.stations.put(station.id, station);
                             this.stationName2ID.put(station.name, station.id);
@@ -97,98 +101,113 @@ public class GiosParser {
         parser.close();
     }
 
-    public void parseSensors() throws IOException {
+    public void parseSensors(String dirName) throws IOException {
         System.out.println("--- Parsing sensors ---");
         for (Station station : this.stations.values()) {
-            final String result = new String(Files.readAllBytes(Paths.get("cache/sensors-" + station.id + ".txt")));
-            final JsonParser parser = Json.createParser(new StringReader(result));
-            String key = null;
-            String value = null;
-            while (parser.hasNext()) {
-                final JsonParser.Event event = parser.next();
-                switch (event) {
-                    case KEY_NAME:
-                        key = parser.getString();
-                        break;
-                    case VALUE_STRING:
-                        value = parser.getString().toLowerCase();
-                        switch (key) {
-                            case "paramName":
-                                this.sensorFactory.paramName = value;
-                                break;
-                            case "paramFormula":
-                                this.sensorFactory.paramFormula = value;
-                                break;
-                            case "paramCode":
-                                if (value.toUpperCase().equals("PM2.5")) value = "pm25";
-                                this.sensorFactory.paramCode = value;
-                                break;
-                            default:
-                                throw new RuntimeException("Parsing error: Unknown key: " + key);
-                        }
-                        break;
-                    case VALUE_NUMBER:
-                        int intValue = parser.getInt();
-                        switch (key) {
-                            case "id":
-                                this.sensorFactory.id = intValue;
-                                break;
-                            case "stationId":
-                                this.sensorFactory.stationID = intValue;
-                                break;
-                            case "idParam":
-                                this.sensorFactory.paramID = intValue;
-                                Sensor sensor = this.sensorFactory.createInstance();
-                                this.sensors.put(sensor.id, sensor);
-                                this.stations.get(sensor.stationID).addSensor(sensor);
-                                break;
-                            default:
-                                throw new RuntimeException("Parsing error: Unknown key: " + key);
-                        }
-                        break;
-                }
-            }
-            parser.close();
+            final String file = new String(Files.readAllBytes(Paths.get(dirName + "/sensors-" + station.id + ".txt")));
+            this.parseSensor(file);
         }
     }
 
-    public void parseData() throws IOException {
+    private void parseSensor(String file) {
+        final JsonParser parser = Json.createParser(new StringReader(file));
+        String key = null;
+        String value = null;
+        while (parser.hasNext()) {
+            final JsonParser.Event event = parser.next();
+            switch (event) {
+                case KEY_NAME:
+                    key = parser.getString();
+                    break;
+                case VALUE_STRING:
+                    value = parser.getString().toLowerCase();
+                    switch (key) {
+                        case "paramName":
+                            this.sensorFactory.paramName = value;
+                            break;
+                        case "paramFormula":
+                            this.sensorFactory.paramFormula = value;
+                            break;
+                        case "paramCode":
+                            if (value.toUpperCase().equals("PM2.5")) value = "pm25";
+                            this.sensorFactory.paramCode = value;
+                            break;
+                        default:
+                            throw new RuntimeException("Parsing error: Unknown key: " + key);
+                    }
+                    break;
+                case VALUE_NUMBER:
+                    int intValue = parser.getInt();
+                    switch (key) {
+                        case "id":
+                            this.sensorFactory.id = intValue;
+                            break;
+                        case "stationId":
+                            this.sensorFactory.stationID = intValue;
+                            break;
+                        case "idParam":
+                            this.sensorFactory.paramID = intValue;
+                            Sensor sensor = this.sensorFactory.createInstance();
+                            this.sensors.put(sensor.id, sensor);
+                            this.stations.get(sensor.stationID).addSensor(sensor);
+                            break;
+                        default:
+                            throw new RuntimeException("Parsing error: Unknown key: " + key);
+                    }
+                    break;
+            }
+        }
+        parser.close();
+    }
+
+    public void parseData(String dirName) throws IOException {
         System.out.println("--- Parsing data ---");
         LocalDateTime date = null;
         long counter = 0;
         for (Sensor sensor : this.sensors.values()) {
-            final String result = new String(Files.readAllBytes(Paths.get("cache/data-" + sensor.id + ".txt")));
-            final JsonParser parser = Json.createParser(new StringReader(result));
-            String key = null;
-            String[] value = null;
-            while (parser.hasNext()) {
-                final JsonParser.Event event = parser.next();
-                switch (event) {
-                    case KEY_NAME:
-                        key = parser.getString();
-                        break;
-                    case VALUE_STRING:
-                        String temp2 = parser.getString().toLowerCase();
-                        if (temp2.split(" ").length > 1) {
-                            date = parseDate(temp2);
-                        }
-                        break;
-                    case VALUE_NUMBER:
-                        int intValue = parser.getInt();
-                        this.sensors.get(sensor.id).addData(new Data(date, intValue));
-                        counter++;
-                        break;
-                }
-            }
-            parser.close();
+            final String file = new String(Files.readAllBytes(Paths.get(dirName + "/data-" + sensor.id + ".txt")));
+            counter += this.parseData(file, sensor);
         }
         System.out.println("Data: " + counter);
         System.out.println("PARSING DONE\n");
     }
 
-    private Index parseIndex(int stationID) throws IOException {
-        final String result = new String(Files.readAllBytes(Paths.get("cache/index-" + stationID + ".txt")));
-        final JsonParser parser = Json.createParser(new StringReader(result));
+    private long parseData(String file, Sensor sensor) {
+        long counter = 0;
+        final JsonParser parser = Json.createParser(new StringReader(file));
+        LocalDateTime date = null;
+        String key = null;
+        String[] value = null;
+        while (parser.hasNext()) {
+            final JsonParser.Event event = parser.next();
+            switch (event) {
+                case KEY_NAME:
+                    key = parser.getString();
+                    break;
+                case VALUE_STRING:
+                    String temp2 = parser.getString().toLowerCase();
+                    if (temp2.split(" ").length > 1) {
+                        date = parseDate(temp2);
+                    }
+                    break;
+                case VALUE_NUMBER:
+                    int intValue = parser.getInt();
+                    this.sensors.get(sensor.id).addData(new Data(date, intValue));
+                    counter++;
+                    break;
+            }
+        }
+        parser.close();
+        return counter;
+    }
+
+    private Index parseIndex(String dirName, int stationID) throws IOException {
+        final String file = new String(Files.readAllBytes(Paths.get(dirName + "/index-" + stationID + ".txt")));
+        return this.parseIndex(file);
+    }
+
+    private Index parseIndex(String file) {
+        final JsonParser parser = Json.createParser(new StringReader(file));
         String key = null;
         String value = null;
         LocalDateTime calcDate = null;

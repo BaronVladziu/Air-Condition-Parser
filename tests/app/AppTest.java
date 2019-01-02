@@ -91,4 +91,9 @@ class AppTest {
         App.main(new String[]{"printRangedFigure", "PM25", "2017-12-23 23:00:00", "2018-12-23 23:00:00"});
     }
 
+    @Test
+    void mainPrintFigure() {
+        App.main(new String[]{"printFigure", "PM25", "lublin ul. obywatelska"});
+    }
+
 }

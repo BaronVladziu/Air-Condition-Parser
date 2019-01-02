@@ -28,4 +28,23 @@ public class Sensor {
         this.data.add(data);
     }
 
+    public boolean equals(Object obj) {
+        Sensor that = (Sensor) obj;
+        return (this.id == that.id &&
+                this.stationID == that.stationID &&
+                this.paramName.equals(that.paramName) &&
+                this.paramFormula.equals(that.paramFormula) &&
+                this.paramCode == that.paramCode &&
+                this.paramID == that.paramID);
+    }
+
+    public String toString() {
+        return "Sensor id: " + id + "\n" +
+                "Station id: " + stationID + "\n" +
+                "Parameter name: " + paramName + "\n" +
+                "Parameter formula: " + paramFormula + "\n" +
+                "Parameter code: " + paramCode + "\n" +
+                "Parameter ID: " + paramID;
+    }
+
 }
