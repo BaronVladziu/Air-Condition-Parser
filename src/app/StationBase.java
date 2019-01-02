@@ -7,43 +7,59 @@ import parser.GiosParser;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Class for gathering and storing all station data.
+ * @author Bartłomiej Kuśmirek
+ */
 public class StationBase {
-
-    private final CacheUpdater cacheUpdater = new CacheUpdater();
-    private final GiosParser giosParser = new GiosParser();
-    private final String cacheDirName = "cache";
 
     private Map<Integer, Station> stations;
     private Map<Integer, City> cities;
     private Map<Integer, Sensor> sensors;
     private Map<String, Integer> stationName2ID;
 
+    /**
+     * Constructor updates and gathers all station data.
+     */
     public StationBase () {
         try {
-            this.cacheUpdater.updateStationCache();
-            this.giosParser.parseStations(cacheDirName);
+            CacheUpdater cacheUpdater = new CacheUpdater();
+            GiosParser giosParser = new GiosParser();
+            String cacheDirName = "cache";
+
+            cacheUpdater.updateStationCache();
+            giosParser.parseStations(cacheDirName);
             this.stations = giosParser.getStations();
             this.cities = giosParser.getCities();
             System.out.println("Cities: " + this.cities.size());
             System.out.println("Stations: " + this.stations.size());
-            this.cacheUpdater.updateSensorCache(stations.values());
-            this.cacheUpdater.updateIndexCache(stations.values());
-            this.giosParser.parseSensors(cacheDirName);
-            this.sensors = this.giosParser.getSensors();
-            this.stationName2ID = this.giosParser.getStationNames2IDs();
+            cacheUpdater.updateSensorCache(stations.values());
+            cacheUpdater.updateIndexCache(stations.values());
+            giosParser.parseSensors(cacheDirName);
+            this.sensors = giosParser.getSensors();
+            this.stationName2ID = giosParser.getStationNames2IDs();
             System.out.println("Sensors: " + this.sensors.size());
-            this.cacheUpdater.updateDataCache(sensors.values());
-            this.giosParser.parseData(cacheDirName);
+            cacheUpdater.updateDataCache(sensors.values());
+            giosParser.parseData(cacheDirName);
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
+    /**
+     * Returns index of given station name.
+     * @param stationName name of the station.
+     * @return air quality index.
+     */
     public Index getIndex(String stationName) {
         return this.getStation(stationName.toLowerCase()).index;
     }
 
+    /**
+     * Prints indices of every given station name.
+     * @param stationNames station names
+     */
     public void printIndex(Collection<String> stationNames) {
         if (stationNames.size() == 0) {
             for (Station station : this.stations.values()) {
@@ -58,10 +74,24 @@ public class StationBase {
         }
     }
 
+    /**
+     * Returns values of given parameter from given station and given date. The can be more than one value because station may have many sensors for one parameter.
+     * @param date from when data will be taken
+     * @param stationName name of the station
+     * @param param requested parameter
+     * @return list od values
+     */
     public List<Data> getValues(LocalDateTime date, String stationName, Parameter param) {
         return this.getValues(date, this.getStation(stationName.toLowerCase()), param);
     }
 
+    /**
+     * Returns values of given parameter from given station and given date. The can be more than one value because station may have many sensors for one parameter.
+     * @param date from when data will be taken
+     * @param station from which station will data be taken
+     * @param param requested parameter
+     * @return list od values
+     */
     public List<Data> getValues(LocalDateTime date, Station station, Parameter param) {
         List<Data> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
@@ -74,6 +104,14 @@ public class StationBase {
         return values;
     }
 
+    /**
+     * Returns most recent value from given date, sensor and parameter
+     * @param date from when data will be taken
+     * @param sensor from which sensor will data be taken
+     * @param param requested parameter
+     * @return single data
+     * @throws ValueNotFoundException when no data fits given parameters
+     */
     public Data getValue(LocalDateTime date, Sensor sensor, Parameter param) throws ValueNotFoundException {
         if (sensor.paramCode == param) {
             for (Data data : sensor.data) { //data is sorted by date
@@ -85,6 +123,14 @@ public class StationBase {
         throw new ValueNotFoundException("No data found");
     }
 
+    /**
+     * Returns values of given parameter from given station and given period.
+     * @param startDate start of the period
+     * @param endDate end of the period
+     * @param station from which station will data be taken
+     * @param param requested parameter
+     * @return list od values
+     */
     public List<Data> getValues(LocalDateTime startDate, LocalDateTime endDate, Station station, Parameter param) {
         List<Data> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
@@ -101,9 +147,15 @@ public class StationBase {
         return values;
     }
 
+    /**
+     * Prints values of given parameter from given date and stations. When no station is given, all will be considered.
+     * @param param requested parameter
+     * @param date from when data will be taken
+     * @param stations from which stations will data be taken
+     */
     public void printValues(Parameter param, LocalDateTime date, List<String> stations) {
         System.out.println("--- Values of " + param + " ---");
-        if (stations.size() == 0) {
+        if (stations == null || stations.size() == 0) {
             for (Station station : this.stations.values()) {
                 List<Data> dataList = this.getValues(date, station, param);
                 if (dataList.size() > 0) {
@@ -128,6 +180,13 @@ public class StationBase {
 
     }
 
+    /**
+     * Returns parameter value of which was the lowest on given date.
+     * @param date requested date
+     * @param stations from which stations will data be taken
+     * @return name and value of the lowest parameter
+     * @throws ValueNotFoundException when no data was found
+     */
     public NamedValue getLowestParam(LocalDateTime date, Collection<Station> stations) throws ValueNotFoundException {
         //Get minimum of every parameter
         float[] values = new float[Parameter.size];
@@ -152,6 +211,11 @@ public class StationBase {
         throw new ValueNotFoundException("No data found");
     }
 
+    /**
+     * Prints parameter value of which was the lowest on given date.
+     * @param date requested date
+     * @param stations from which stations will data be taken
+     */
     public void printLowestParam(LocalDateTime date, List<String> stations) {
         System.out.println("--- Lowest parameter ---");
         try {
@@ -169,6 +233,13 @@ public class StationBase {
         }
     }
 
+    /**
+     * Returns parameter value of which was the highest on given date.
+     * @param date requested date
+     * @param stations from which stations will data be taken
+     * @return name and value of the lowest parameter
+     * @throws ValueNotFoundException when no data was found
+     */
     public NamedValue getHighestParam(LocalDateTime date, Collection<Station> stations) throws ValueNotFoundException {
         //Get minimum of every parameter
         float[] values = new float[Parameter.size];
@@ -193,6 +264,11 @@ public class StationBase {
         throw new ValueNotFoundException("No data found");
     }
 
+    /**
+     * Prints parameter value of which was the highest on given date.
+     * @param date requested date
+     * @param stations from which stations will data be taken
+     */
     public void printHighestParam(LocalDateTime date, List<String> stations) {
         System.out.println("--- Highest parameter ---");
         try {
@@ -210,6 +286,13 @@ public class StationBase {
         }
     }
 
+    /**
+     * Returns values named by station from which they have been taken.
+     * @param station from which station will data be taken
+     * @param date requested date
+     * @param param requested parameter
+     * @return values named by station from which they have been taken
+     */
     public List<NamedValue> getNamedValues(Station station, LocalDateTime date, Parameter param) {
         List<NamedValue> values = new LinkedList<>();
         for (Sensor sensor : station.sensors) {
@@ -222,6 +305,13 @@ public class StationBase {
         return values;
     }
 
+    /**
+     * Returns values named by station from which they have been taken.
+     * @param stationName from which station will data be taken
+     * @param date requested date
+     * @param param requested parameter
+     * @return values named by station from which they have been taken
+     */
     public List<NamedValue> getNamedValues(String stationName, LocalDateTime date, Parameter param) {
         return this.getNamedValues(this.getStation(stationName.toLowerCase()), date, param);
     }

@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Calendar;
 
+/**
+ * Class for downloading data from http://powietrze.gios.gov.pl/pjp/content/api and saving it to cache and updating it from time to time.
+ * @author Bartłomiej Kuśmirek
+ */
 public class CacheUpdater {
 
     private static final HttpGetter HTTP_GETTER = new HttpGetter();
@@ -15,24 +19,38 @@ public class CacheUpdater {
 
     private final Calendar cal = Calendar.getInstance();
 
-
-    public void updateStationCache() throws IOException {
+    /**
+     * Updates stations cache.
+     */
+    public void updateStationCache() {
         this.updateFile("cache/station-findAll.txt", "http://api.gios.gov.pl/pjp-api/rest/station/findAll");
     }
 
-    public void updateSensorCache(Iterable<Station> stations) throws IOException {
+    /**
+     * Updates sensors cache for every given station.
+     * @param stations sensors of these stations will be updated
+     */
+    public void updateSensorCache(Iterable<Station> stations) {
         for (Station station : stations) {
             this.updateFile("cache/sensors-" + station.id + ".txt", "http://api.gios.gov.pl/pjp-api/rest/station/sensors/" + station.id);
         }
     }
 
-    public void updateDataCache(Iterable<Sensor> sensors) throws IOException {
+    /**
+     * Updates data cache for every given sensor.
+     * @param sensors data of these sensors will be updated
+     */
+    public void updateDataCache(Iterable<Sensor> sensors) {
         for (Sensor sensor : sensors) {
             this.updateFile("cache/data-" + sensor.id + ".txt", "http://api.gios.gov.pl/pjp-api/rest/data/getData/" + sensor.id);
         }
     }
 
-    public void updateIndexCache(Iterable<Station> stations) throws IOException {
+    /**
+     * Updates index cache for every given station.
+     * @param stations indices of these stations will be updated
+     */
+    public void updateIndexCache(Iterable<Station> stations) {
         for (Station station : stations) {
             this.updateFile("cache/index-" + station.id + ".txt", "http://api.gios.gov.pl/pjp-api/rest/aqindex/getIndex/" + station.id);
         }

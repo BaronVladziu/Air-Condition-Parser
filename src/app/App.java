@@ -3,8 +3,16 @@ package app;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * Main class.
+ * @author Bartłomiej Kuśmirek
+ */
 public class App {
 
+    /**
+     * Main method. It passes user request to StationBaseAdapter.
+     * @param args arguments from user console line
+     */
     public static void main(String[] args) {
         if (args.length == 0) {
             printHelp();
