@@ -1,5 +1,8 @@
 package gios;
 
+/**
+ * Enum with parameters of air quality index
+ */
 public enum Parameter {
 
     ST,
@@ -11,6 +14,9 @@ public enum Parameter {
     O3,
     C6H6;
 
+    /**
+     * number of parameter values
+     */
     public static int size = values().length;
 
 }

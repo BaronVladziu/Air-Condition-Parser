@@ -68,6 +68,8 @@ class GiosParserTest {
             assertEquals(1, this.giosParser.getCities().size());
             System.out.println("Stations: " + this.giosParser.getStations().size());
             assertEquals(1, this.giosParser.getStations().size());
+            this.giosParser.parseIndices(this.cacheDirName);
+            System.out.println("Indices: " + this.giosParser.getStations().size());
             this.giosParser.parseSensors(this.cacheDirName);
             System.out.println("Sensors: " + this.giosParser.getSensors().size());
             assertEquals(3, this.giosParser.getSensors().size());
@@ -80,16 +82,16 @@ class GiosParserTest {
                     this.giosParser.getCities().get(0));
             LocalDateTime calcDate = LocalDateTime.of(2018, 12, 23, 22, 12, 26);
             LocalDateTime sourceDate = LocalDateTime.of(2018, 12, 23, 22, 0);
-            Index testIndex = new Index(new IndexValue("bardzo dobry", calcDate, sourceDate),
+            Index testIndex = new Index(new IndexValue[]{new IndexValue("bardzo dobry", calcDate, sourceDate),
                     new IndexValue("bardzo dobry", calcDate, sourceDate),
                     new IndexValue("bardzo dobry", calcDate, sourceDate),
                     new IndexValue("bardzo dobry", calcDate, sourceDate),
                     null,
                     new IndexValue("bardzo dobry", calcDate, sourceDate),
                     null,
-                    new IndexValue("bardzo dobry", calcDate, sourceDate));
+                    new IndexValue("bardzo dobry", calcDate, sourceDate)});
             assertEquals(testIndex, this.giosParser.getStations().get(0).index);
-            assertEquals(new Station(0, "dummy station", 51.115933f, 17.141125f, 0, "dummy street", testIndex),
+            assertEquals(new Station(0, "dummy station", 51.115933f, 17.141125f, 0, "dummy street"),
                     this.giosParser.getStations().get(0));
             assertEquals(0, this.giosParser.getStationNames2IDs().get("dummy station"));
             assertEquals(new Sensor(0, 0, "dwutlenek azotu", "no2", "NO2", 6),

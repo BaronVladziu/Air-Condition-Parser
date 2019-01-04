@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Air-Condition-Parser:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Air_Condition_Parser_jar</output-path>
+    <root id="archive" name="Air-Condition-Parser.jar">
+      <element id="module-output" name="Air-Condition-Parser" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/jars/javax.json-1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/jars/javax.json-api-1.1.4.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

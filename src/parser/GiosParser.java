@@ -25,7 +25,11 @@ public class GiosParser {
     private Map<Integer, Sensor> sensors = new HashMap<>();
     private Map<String, Integer> stationName2ID = new HashMap<>();
 
-
+    /**
+     * Parses station-findAll.txt file and loads data about cities and stations.
+     * @param dirName path to the file
+     * @throws IOException when file is not found
+     */
     public void parseStations(String dirName) throws IOException {
         System.out.println("--- Parsing stations ---");
         final String file = new String(Files.readAllBytes(Paths.get(dirName + "/station-findAll.txt")));
@@ -72,7 +76,6 @@ public class GiosParser {
                             break;
                         case "addressStreet":
                             this.stationFactory.addressStreet = value;
-                            this.stationFactory.index = this.parseIndex(dirName, this.stationFactory.id);
                             Station station = this.stationFactory.createInstance();
                             this.stations.put(station.id, station);
                             this.stationName2ID.put(station.name, station.id);
@@ -101,6 +104,23 @@ public class GiosParser {
         parser.close();
     }
 
+    /**
+     * Parses index-<stationID>.txt files and loads data about station air quality indices.
+     * @param dirName path to the files
+     * @throws IOException when file is not found
+     */
+    public void parseIndices(String dirName) throws IOException {
+        System.out.println("--- Parsing indices ---");
+        for (Station station : this.stations.values()) {
+            station.index = this.parseIndex(dirName, station.id);
+        }
+    }
+
+    /**
+     * Parses sensors-<stationID>.txt files and loads data about sensors.
+     * @param dirName path to the files
+     * @throws IOException when file is not found
+     */
     public void parseSensors(String dirName) throws IOException {
         System.out.println("--- Parsing sensors ---");
         for (Station station : this.stations.values()) {
@@ -160,6 +180,11 @@ public class GiosParser {
         parser.close();
     }
 
+    /**
+     * Parses data-<sensorID>.txt files and loads data about data.
+     * @param dirName path to the files
+     * @throws IOException when file is not found
+     */
     public void parseData(String dirName) throws IOException {
         System.out.println("--- Parsing data ---");
         LocalDateTime date = null;
@@ -287,22 +312,43 @@ public class GiosParser {
         return this.indexFactory.createInstance();
     }
 
+    /**
+     * Returns data about cities.
+     * @return cities
+     */
     public final Map<Integer, City> getCities() {
         return this.cities;
     }
 
+    /**
+     * Returns data about stations.
+     * @return stations
+     */
     public final Map<Integer, Station> getStations() {
         return this.stations;
     }
 
+    /**
+     * Returns data about sensors.
+     * @return sensors
+     */
     public final Map<Integer, Sensor> getSensors() {
         return this.sensors;
     }
 
+    /**
+     * Returns map connecting station id to station name.
+     * @return map that allows to get station id when station name is known
+     */
     public final Map<String, Integer> getStationNames2IDs() {
         return this.stationName2ID;
     }
 
+    /**
+     * Parses and returns date from string.
+     * @param string date string
+     * @return date
+     */
     public static LocalDateTime parseDate(String string) {
         String[] temp = string.split(" ");
         String[] value = Stream.of(temp[0].split("-"), temp[1].split(":")).flatMap(Stream::of)

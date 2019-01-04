@@ -15,9 +15,16 @@ import java.util.Calendar;
 public class CacheUpdater {
 
     private static final HttpGetter HTTP_GETTER = new HttpGetter();
-    private static final float updateAfterMinutes = 100000;
+    private static final float updateAfterMinutes = 7*24*60; //seven days in minutes
 
     private final Calendar cal = Calendar.getInstance();
+
+    /**
+     * Constructor. Creates cache directory.
+     */
+    public CacheUpdater() {
+        new File("cache").mkdirs();
+    }
 
     /**
      * Updates stations cache.

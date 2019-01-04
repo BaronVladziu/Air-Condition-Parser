@@ -1,17 +1,41 @@
 package gios;
 
+/**
+ * Structure representing air quality index.
+ * @author Bartłomiej Kuśmirek
+ */
 public class Index {
 
+    /**
+     * values of different parameters in the order as in Parameter enum
+     */
     public final IndexValue[] values;
 
-    public Index(IndexValue st, IndexValue so2, IndexValue no2, IndexValue co, IndexValue pm10, IndexValue pm25, IndexValue o3, IndexValue c6h6) {
-        this.values = new IndexValue[]{st, so2, no2, co, pm10, pm25, o3, c6h6};
+    /**
+     * Constructor
+     * @param values array of length of Parameter with values in order as in Parameter enum
+     */
+    public Index(final IndexValue[] values) {
+        this.values = values;
     }
 
+    /**
+     * Creates string representation of Index.
+     * @return string representing index
+     */
     public String toString() {
-        return "ST: " + values[0] + "\nSO2: " + values[1] + "\nNO2: " + values[2] + "\nCO: " + values[3] + "\nPM10: " + values[4] + "\nPM2.5: " + values[5] + "\nO3: " + values[6] + "\nC6H6: " + values[7];
+        StringBuilder result = new StringBuilder();
+        for (Parameter param : Parameter.values()) {
+            result.append(param + ": " + values[param.ordinal()] + "\n");
+        }
+        return result.toString();
     }
 
+    /**
+     * Checks if indicies are equal.
+     * @param obj the other index
+     * @return true if every field in the other index has the same value as in this index, false otherwise
+     */
     public boolean equals(Object obj) {
         Index that = (Index) obj;
         if (this.values.length != that.values.length) return false;
